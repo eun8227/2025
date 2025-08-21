@@ -1,3 +1,2 @@
 import streamlit as st
-st.title('이은혜 app')
-st.write
+st.title('이은혜')
