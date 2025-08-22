@@ -5,7 +5,7 @@ import datetime
 
 st.set_page_config(page_title="댄스 연습 기록 앱", layout="wide")
 
-# ===== CSS (배경 + 반짝임 효과) =====
+# ===== CSS (오로라 + 별똥별 반짝임) =====
 st.markdown(
     """
     <style>
@@ -14,35 +14,65 @@ st.markdown(
         background-size: 400% 400%;
         animation: aurora 20s ease infinite;
         color: white;
+        overflow: hidden;
     }
     @keyframes aurora {
         0% {background-position: 0% 50%;}
         50% {background-position: 100% 50%;}
         100% {background-position: 0% 50%;}
     }
+
     .star {
         position: absolute;
-        width: 3px;
-        height: 3px;
+        width: 2px;
+        height: 2px;
+        background: white;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
-        animation: twinkle 2s infinite alternate;
+        animation: twinkle 2s infinite ease-in-out;
     }
+
     @keyframes twinkle {
-        from {opacity: 0.2;}
-        to {opacity: 1;}
+        0%, 100% {opacity: 0.2;}
+        50% {opacity: 1;}
+    }
+
+    .shooting-star {
+        position: absolute;
+        width: 2px;
+        height: 80px;
+        background: linear-gradient(-45deg, white, transparent);
+        animation: shooting 5s linear infinite;
+        opacity: 0.8;
+    }
+
+    @keyframes shooting {
+        0% {transform: translateX(0) translateY(0); opacity: 0;}
+        10% {opacity: 1;}
+        100% {transform: translateX(-800px) translateY(600px); opacity: 0;}
     }
     </style>
+
     <script>
-    for (let i = 0; i < 80; i++) {
-        let star = document.createElement("div");
-        star.className = "star";
-        star.style.top = Math.random() * 100 + "%";
-        star.style.left = Math.random() * 100 + "%";
-        star.style.background = `hsl(${Math.random()*360}, 100%, 75%)`;
-        star.style.animationDuration = (1 + Math.random()*3) + "s";
-        document.body.appendChild(star);
+    function createStars() {
+        const body = document.querySelector("body");
+        for (let i = 0; i < 150; i++) {
+            let star = document.createElement("div");
+            star.className = "star";
+            star.style.top = Math.random() * window.innerHeight + "px";
+            star.style.left = Math.random() * window.innerWidth + "px";
+            star.style.animationDuration = 1 + Math.random() * 3 + "s";
+            body.appendChild(star);
+        }
+        for (let i = 0; i < 5; i++) {
+            let shooting = document.createElement("div");
+            shooting.className = "shooting-star";
+            shooting.style.top = Math.random() * window.innerHeight + "px";
+            shooting.style.left = Math.random() * window.innerWidth + "px";
+            shooting.style.animationDelay = Math.random() * 5 + "s";
+            body.appendChild(shooting);
+        }
     }
+    window.onload = createStars;
     </script>
     """,
     unsafe_allow_html=True
