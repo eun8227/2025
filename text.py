@@ -1,142 +1,151 @@
 import streamlit as st
-import pandas as pd
 import random
-import datetime
+import pandas as pd
+from datetime import datetime, time
 
-st.set_page_config(page_title="댄스 연습 앱", layout="wide")
+st.set_page_config(page_title="댄스 연습 앱", page_icon="💃", layout="wide")
 
-# --- CSS: 오로라 + 별똥별 ---
-st.markdown("""
-<style>
-body {
-    margin: 0;
-    height: 100vh;
-    background: linear-gradient(270deg, #0f2027, #203a43, #2c5364);
-    background-size: 600% 600%;
-    animation: aurora 20s ease infinite;
-    color: white;
-}
-@keyframes aurora {
-    0% {background-position:0% 50%}
-    50% {background-position:100% 50%}
-    100% {background-position:0% 50%}
-}
-/* 별똥별 효과 */
-.starry {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  top: 0;
-  left: 0;
-}
-.star {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: white;
-  animation: twinkle 2s infinite alternate;
-}
-@keyframes twinkle {
-  from {opacity: 0.1;}
-  to {opacity: 1;}
-}
-.shooting-star {
-  position: absolute;
-  width: 150px;
-  height: 2px;
-  background: linear-gradient(-45deg, white, rgba(0,0,255,0));
-  animation: shooting 3s linear infinite;
-}
-@keyframes shooting {
-  from {transform: translateX(0) translateY(0);}
-  to {transform: translateX(-600px) translateY(600px);}
-}
-</style>
-<div class="starry">
-  """ + "".join([f'<div class="star" style="top:{random.randint(0,100)}%;left:{random.randint(0,100)}%"></div>' for _ in range(80)]) +
-  "".join([f'<div class="shooting-star" style="top:{random.randint(0,100)}%;left:{random.randint(0,100)}%"></div>' for _ in range(5)]) +
-  "</div>",
-  unsafe_allow_html=True
+# ---- 스타일 (오로라 배경 + 무지개빛 반짝이는 효과) ----
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        background-attachment: fixed;
+        position: relative;
+        overflow: hidden;
+        color: white;
+    }
+
+    @keyframes sparkle {
+        0% { opacity: 0; transform: scale(0.5) translateY(0); }
+        50% { opacity: 1; transform: scale(1.2) translateY(-30px); }
+        100% { opacity: 0; transform: scale(0.5) translateY(0); }
+    }
+
+    .sparkle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        animation: sparkle 3s infinite;
+    }
+    </style>
+    <script>
+    function createSparkles(){
+        const colors = ["#ff99cc", "#ffcc99", "#ffff99", "#ccff99", "#99ccff", "#cc99ff"];
+        for(let i=0; i<100; i++){
+            let s = document.createElement("div");
+            s.className = "sparkle";
+            s.style.top = Math.random()*100+"%";
+            s.style.left = Math.random()*100+"%";
+            s.style.background = colors[Math.floor(Math.random()*colors.length)];
+            s.style.animationDelay = (Math.random()*5)+"s";
+            s.style.opacity = 0;
+            document.body.appendChild(s);
+        }
+    }
+    createSparkles();
+    </script>
+    """,
+    unsafe_allow_html=True
 )
 
-# --- 기본기 데이터 ---
-dance_moves = {
-    "HipHop": {
-        "초급": [
-            ("Bounce 🐥", "무릎을 리드미컬하게 굽혔다 펴며 상체 반동 주기", "https://youtu.be/HDuXlV3t1Kg"),
-            ("Step Touch 🐰", "옆으로 발을 뻗고 제자리로 가져오기", "https://youtu.be/qKXK6rYxYh0"),
-        ],
-        "중급": [
-            ("Running Man 🏃", "발을 뒤로 빼면서 상체를 앞뒤로 움직이기", "https://youtu.be/n3-9Z5qA0rM"),
-        ],
-    },
-    "K-Pop": {
-        "초급": [
-            ("Finger Heart 💖", "양손으로 하트를 만들어 리듬에 맞춰 흔들기", "https://youtu.be/4Q46xYqUwZQ"),
-        ],
-        "중급": [
-            ("Body Wave 🌊", "상체를 물결처럼 이어서 움직이기", "https://youtu.be/OhmR4lFZx3o"),
-        ],
+st.title("🌌✨ 댄스 연습 기록 & 랜덤 안무 아이디어 ✨🌌")
+
+# ---- 데이터 초기화 ----
+if "records" not in st.session_state:
+    st.session_state["records"] = []
+
+# ---- 장르별 기본기 (설명 포함) ----
+dance_basics = {
+    "힙합": {
+        "초급": [("Bounce", "무릎을 리드미컬하게 굽혔다 펴며 상체와 함께 반동 주기"),
+                ("Step Touch", "옆으로 발을 뻗고 다시 제자리로 가져오기"),
+                ("Slide", "발을 바닥에 밀듯이 옆으로 이동하기")],
+        "중급": [("Body Roll", "상체를 위에서 아래로 굴리듯 움직이기"),
+                ("Wave", "팔과 몸통을 물결처럼 연결해서 흐르게 하기"),
+                ("Isolations", "몸의 특정 부위만 따로 움직이는 연습")],
+        "고급": [("Knee Drop", "무릎을 빠르게 바닥에 꿇으며 흐름을 유지하기"),
+                ("Harlem Shake", "어깨와 몸통을 흔들어 리듬 강조하기"),
+                ("Reverse Wave", "Wave를 반대 방향으로 부드럽게 이어가기")]
     }
 }
 
-# --- 추천곡 데이터 (날짜별 랜덤) ---
-songs = {
-    "HipHop": [
-        ("Lose Control - Missy Elliott", "https://youtu.be/dVL4azrBFoM"),
-        ("Lean Back - Terror Squad", "https://youtu.be/ajmI1P3r1w4")
-    ],
-    "K-Pop": [
-        ("SEVENTEEN - Super", "https://youtu.be/-GQg25oP0S4"),
-        ("BLACKPINK - Pink Venom", "https://youtu.be/gQlMMD8auMs")
+# ---- 곡 추천 (유튜브 링크 포함) ----
+song_recommendations = {
+    "힙합": [
+        ("Jay Park - All I Wanna Do", "https://youtu.be/w0PtbE8K6FQ"),
+        ("Zico - Artist", "https://youtu.be/UuV2BmJ1p_I"),
+        ("Epik High - Fly", "https://youtu.be/lS9VnS6tJqE"),
+        ("Dynamic Duo - AEAO", "https://youtu.be/j3YcW1n4i7s"),
+        ("Crush - Oasis", "https://youtu.be/cpE6oC2FZ94")
     ]
 }
 
-# --- 사이드바 ---
-st.sidebar.title("📌 메뉴")
-page = st.sidebar.radio("이동", ["오늘의 안무", "연습 기록"])
+# ---- 랜덤 안무 생성 함수 ----
+def generate_routine(genre, level):
+    moves = dance_basics[genre][level]
+    routine_length = random.randint(3, 5)
+    routine = random.choices(moves, k=routine_length)
 
-# --- 세션 상태 ---
-if "records" not in st.session_state:
-    st.session_state.records = []
+    formatted = []
+    cute_emojis = ["🌸", "🐥", "🐰", "🎀", "🍓", "💫"]
+    for i, (move, desc) in enumerate(routine, 1):
+        emoji = random.choice(cute_emojis)
+        formatted.append(f"{i}. {move} {emoji} → {desc}")
+    return "\n".join(formatted)
 
-# --- 오늘의 안무 페이지 ---
-if page == "오늘의 안무":
-    st.title("✨ 오늘의 안무 아이디어 ✨")
+# ---- 오늘의 곡 추천 (날짜에 따라 자동 변경) ----
+def get_daily_song(genre):
+    today = datetime.today().date()
+    idx = today.toordinal() % len(song_recommendations[genre])
+    return song_recommendations[genre][idx]
 
-    genre = st.selectbox("장르 선택 🕺", list(dance_moves.keys()))
-    level = st.selectbox("난이도 선택 🎚", list(dance_moves[genre].keys()))
+# ---- 안무 랜덤 생성 ----
+st.header("🌈 랜덤 기본기 안무 생성기 🐰")
+genre = st.selectbox("🎵 장르 선택", list(dance_basics.keys()))
+level = st.radio("🔥 난이도 선택", ["초급", "중급", "고급"])
 
-    if st.button("랜덤 안무 생성 🎲"):
-        moves = random.sample(dance_moves[genre][level], k=min(2, len(dance_moves[genre][level])))
-        for move in moves:
-            name, desc, link = move
-            st.markdown(f"**{name}** - {desc}")
-            st.video(link)
+if st.button("💡 안무 생성하기"):
+    routine = generate_routine(genre, level)
+    st.session_state["current_routine"] = routine
 
-    # 오늘의 추천곡
-    st.subheader("🎵 오늘의 추천곡")
-    today = datetime.date.today().toordinal()
-    for genre_name, genre_songs in songs.items():
-        song = genre_songs[today % len(genre_songs)]
-        st.markdown(f"**{genre_name}**: [{song[0]}]({song[1]})")
+# ---- 안무 결과 + 곡 선택 ----
+if "current_routine" in st.session_state:
+    st.subheader("오늘의 안무 아이디어 🎀✨")
+    st.markdown(st.session_state["current_routine"])
 
-# --- 연습 기록 페이지 ---
-elif page == "연습 기록":
-    st.title("📊 연습 기록하기")
-    date = st.date_input("연습 날짜 선택 📅", datetime.date.today())
-    start_time = st.time_input("시작 시간 ⏰", datetime.datetime.now().time())
-    end_time = st.time_input("종료 시간 🕒", (datetime.datetime.now() + datetime.timedelta(hours=1)).time())
-    duration = (datetime.datetime.combine(datetime.date.today(), end_time) -
-                datetime.datetime.combine(datetime.date.today(), start_time)).seconds / 60
+    st.subheader("🎶 오늘의 추천 곡")
+    daily_song = get_daily_song(genre)
+    st.markdown(f"{daily_song[0]} 🎵 [듣기]({daily_song[1]})")
+    st.session_state["selected_song"] = daily_song[0]
 
-    if st.button("기록 저장 ✍️"):
-        st.session_state.records.append({"날짜": date, "시작": start_time, "종료": end_time, "분": duration})
-        st.success("저장 완료! 🎉")
+# ---- 연습 기록 ----
+st.header("📒 연습 기록하기 🐥")
+date = st.date_input("📅 연습 날짜", datetime.today())
+start_time = st.time_input("⏰ 시작 시간", value=time(18, 0))
+end_time = st.time_input("🏁 종료 시간", value=time(19, 0))
+minutes = (datetime.combine(datetime.today(), end_time) - datetime.combine(datetime.today(), start_time)).seconds // 60
 
-    if st.session_state.records:
-        df = pd.DataFrame(st.session_state.records)
-        st.dataframe(df)
-        st.line_chart(df.set_index("날짜")["분"])
-        st.download_button("CSV 다운로드 📂", df.to_csv(index=False), "records.csv", "text/csv")
+if st.button("✅ 연습 기록 저장 🎀"):
+    st.session_state["records"].append({
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "minutes": minutes,
+        "routine": st.session_state.get("current_routine", "없음"),
+        "genre": genre,
+        "level": level,
+        "song": st.session_state.get("selected_song", "선택 안 함")
+    })
+    st.success("✨ 연습 기록이 저장되었습니다! 🌸")
+
+# ---- 기록 보기 ----
+st.header("📊 나의 연습 기록 🐰")
+if len(st.session_state["records"]) > 0:
+    df = pd.DataFrame(st.session_state["records"])
+    st.dataframe(df)
+    st.line_chart(df.set_index("date")["minutes"])
+else:
+    st.info("아직 연습 기록이 없습니다. 먼저 기록을 남겨보세요! 🐥")
