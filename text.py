@@ -5,13 +5,13 @@ from datetime import datetime, time
 
 st.set_page_config(page_title="댄스 연습 앱", page_icon="💃", layout="wide")
 
-# --- 🌌 오로라 배경 CSS (별똥별 제거) ---
+# --- 🌌 오로라 배경 ---
 page_bg = """
 <style>
 .stApp {
-    background: linear-gradient(120deg, #1e3c72, #2a5298, #6dd5ed, #cc2b5e, #753a88);
-    background-size: 400% 400%;
-    animation: aurora 15s ease infinite;
+    background: linear-gradient(120deg, #1e3c72, #2a5298, #6dd5ed, #00c6ff, #ff758c, #ff7eb3);
+    background-size: 600% 600%;
+    animation: aurora 20s ease infinite;
 }
 @keyframes aurora {
     0% {background-position: 0% 50%;}
@@ -33,30 +33,60 @@ if "selected_songs" not in st.session_state:
 # --- 기본기 데이터 ---
 dance_basics = {
     "힙합": {
-        "초급": [
-            ("Bounce", ["무릎 굽히며 박자 타기", "어깨 리듬", "손 자연스럽게 흔들기"]),
-            ("Step Touch", ["옆으로 발 내딛기", "반대발 붙이기", "손 반대방향 흔들기"]),
-            ("Slide", ["발을 밀듯 옆으로", "상체 부드럽게", "발 모으기"])
-        ],
-        "중급": [
-            ("Body Roll", ["가슴 내밀기", "가슴→배→골반 굴리기", "부드럽게 연결"]),
-            ("Wave", ["손끝→팔꿈치 파도", "어깨→가슴→허리 이어가기", "허리→반대팔"]),
-            ("Isolations", ["머리만 좌우", "어깨 업다운", "골반 원형"])
-        ],
-        "고급": [
-            ("Knee Drop", ["무릎 구부리며 착지", "상체 고정", "일어나며 리듬"]),
-            ("Harlem Shake", ["어깨 빠르게 흔들기", "몸 전체 진동", "팔·머리 흔들기"]),
-            ("Reverse Wave", ["허리→가슴→어깨→팔", "손끝까지 흐름", "부드럽게 원위치"])
-        ]
+        "초급": [("Bounce", ["무릎 굽히며 박자 타기", "어깨 리듬"]), ("Step Touch", ["옆으로 발 내딛기", "손 반대방향 흔들기"])],
+        "중급": [("Body Roll", ["가슴→배→골반 굴리기"]), ("Wave", ["손끝→팔꿈치→어깨→가슴→허리 이어가기"])],
+        "고급": [("Knee Drop", ["무릎 굽히며 착지", "리듬 유지"]), ("Harlem Shake", ["어깨와 상체를 빠르게 흔들기"])]
+    },
+    "팝핀": {
+        "초급": [("Hit", ["팔·다리 힘주며 박자"]), ("Fresno", ["좌우 이동하며 팝"])],
+        "중급": [("Old Man", ["상체 숙이며 팝"]), ("Neck-o-flex", ["목을 기계적으로 꺾기"])],
+        "고급": [("Boogaloo Roll", ["몸 전체 웨이브"]), ("Gliding", ["발을 미끄러지듯 이동"])]
+    },
+    "하우스": {
+        "초급": [("Jack", ["상체를 업다운"]), ("Loose Leg", ["발 가볍게 튕기며 이동"])],
+        "중급": [("Shuffle", ["발을 빠르게 비비며 이동"]), ("Cross Step", ["발 교차 스텝"])],
+        "고급": [("Stomp", ["강한 박자 찍기"]), ("Heel Toe", ["발끝과 발뒤꿈치 교차 이동"])]
+    },
+    "걸스힙합": {
+        "초급": [("Hip Swing", ["골반 좌우 리듬"]), ("Hair Flip", ["머리를 크게 돌리기"])],
+        "중급": [("Chest Pump", ["가슴을 앞뒤로"]), ("Body Roll", ["전신 굴리기"])],
+        "고급": [("Drop", ["빠르게 무릎 굽혀 앉기"]), ("Floor Move", ["바닥 동작"])],
+    },
+    "K-Pop": {
+        "초급": [("Finger Point", ["손가락으로 포인트"]), ("Side Step", ["좌우 기본 스텝"])],
+        "중급": [("Shoulder Dance", ["어깨 리듬"]), ("Hip Roll", ["골반 돌리기"])],
+        "고급": [("Floor Wave", ["바닥 웨이브"]), ("Jump & Pose", ["점프 후 포즈"])]
     }
 }
 
-# --- 추천곡 ---
+# --- 추천곡 (장르별, 유튜브 링크 포함) ---
 song_recommendations = {
     "힙합": [
         ("Jay Park - All I Wanna Do", "https://youtu.be/w0PtbE8K6FQ"),
         ("Zico - Artist", "https://youtu.be/UuV2BmJ1p_I"),
-        ("Epik High - Fly", "https://youtu.be/lS9VnS6tJqE")
+        ("Epik High - Fly", "https://youtu.be/lS9VnS6tJqE"),
+        ("Dynamic Duo - Ring My Bell", "https://youtu.be/vOhtFtzLGuQ"),
+    ],
+    "팝핀": [
+        ("Michael Jackson - Billie Jean", "https://youtu.be/Zi_XLOBDo_Y"),
+        ("Turbo - Love Is", "https://youtu.be/zB2C7tgpN6E"),
+        ("Chris Brown - Fine China", "https://youtu.be/iGsV9gTXgXo"),
+    ],
+    "하우스": [
+        ("Robin S - Show Me Love", "https://youtu.be/PSYxT9GM0fQ"),
+        ("Crystal Waters - Gypsy Woman", "https://youtu.be/MK6TXMsvgQg"),
+        ("Disclosure - Latch", "https://youtu.be/93ASUImTedo"),
+    ],
+    "걸스힙합": [
+        ("Beyoncé - Run The World", "https://youtu.be/VBmMU_iwe6U"),
+        ("Ariana Grande - 7 rings", "https://youtu.be/QYh6mYIJG2Y"),
+        ("BLACKPINK - How You Like That", "https://youtu.be/ioNng23DkIM"),
+    ],
+    "K-Pop": [
+        ("BTS - Dynamite", "https://youtu.be/gdZLi9oWNZg"),
+        ("NewJeans - Super Shy", "https://youtu.be/ArmDp-zijuc"),
+        ("SEVENTEEN - HOT", "https://youtu.be/gRnuFC4Ualw"),
+        ("IVE - I AM", "https://youtu.be/6ZUIwj3FgUY"),
     ]
 }
 
@@ -83,13 +113,16 @@ if "current_routine" in st.session_state:
     st.success(f"오늘의 안무 아이디어 ({genre} - {level}) 🌟")
     st.markdown(st.session_state["current_routine"])
 
+    # --- 오늘의 추천곡 (매일 자동 변경) ---
     st.subheader("🎶 오늘의 추천 곡")
-    song_list = [title for title, _ in song_recommendations[genre]]
-    st.session_state["selected_songs"] = st.multiselect("곡을 골라보세요 🎧", song_list)
-
-    for title, link in song_recommendations[genre]:
-        if title in st.session_state["selected_songs"]:
-            st.markdown(f"👉 {title} 🔗 [유튜브]({link})")
+    today = datetime.today().date()
+    random.seed(str(today) + genre)  # 오늘 날짜 + 장르 기반 시드
+    
+    songs_today = random.sample(song_recommendations[genre], 
+                                min(2, len(song_recommendations[genre])))  # 오늘 2곡 랜덤
+    
+    for title, link in songs_today:
+        st.markdown(f"👉 {title} 🔗 [유튜브]({link})")
 
 # --- 연습 기록 ---
 st.header("📝 연습 기록")
@@ -106,8 +139,7 @@ if st.button("기록 저장"):
         "hours": round(duration, 2),
         "routine": st.session_state.get("current_routine", "없음"),
         "genre": genre,
-        "level": level,
-        "songs": st.session_state["selected_songs"]
+        "level": level
     })
     st.success("✅ 연습 기록이 저장되었습니다!")
 
