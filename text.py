@@ -1,187 +1,219 @@
 import streamlit as st
-import random
-import datetime
 import pandas as pd
+import random
+from datetime import datetime, time
 
-st.set_page_config(page_title="댄스 연습 기록 앱", layout="wide")
+st.set_page_config(page_title="댄스 연습 앱", page_icon="💃", layout="wide")
 
-# 🌌 오로라 + 별 배경 CSS
+# --- 🌌 오로라 배경 ---
 page_bg = """
 <style>
 .stApp {
-    background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
-    color: white;
+    background: linear-gradient(120deg, #1e3c72, #2a5298, #6dd5ed, #00c6ff, #ff758c, #ff7eb3);
+    background-size: 600% 600%;
+    animation: aurora 20s ease infinite;
 }
 @keyframes aurora {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.aurora {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0; left: 0;
-    background: linear-gradient(270deg, rgba(0,255,255,0.2), rgba(255,0,255,0.2), rgba(0,0,128,0.2));
-    background-size: 600% 600%;
-    animation: aurora 30s ease infinite;
-    z-index: -1;
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
 }
 </style>
-<div class="aurora"></div>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
 
+st.title("💃 댄스 연습 기록 & 랜덤 안무 아이디어 🌙✨")
 
-# 🎵 장르별 추천곡 (곡명, 아티스트, 유튜브 링크)
-recommendations = {
-    "힙합": [
-        ("Sicko Mode", "Travis Scott", "https://www.youtube.com/watch?v=6ONRf7h3Mdk"),
-        ("Goosebumps", "Travis Scott", "https://www.youtube.com/watch?v=Dst9gZkq1a8"),
-        ("DNA", "방탄소년단", "https://www.youtube.com/watch?v=MBdVXkSdhwU")
-    ],
-    "팝핀": [
-        ("Billie Jean", "Michael Jackson", "https://www.youtube.com/watch?v=Zi_XLOBDo_Y"),
-        ("Smooth Criminal", "Michael Jackson", "https://www.youtube.com/watch?v=h_D3VFfhvs4"),
-        ("Dance Monkey", "Tones and I", "https://www.youtube.com/watch?v=q0hyYWKXF0Q")
-    ],
-    "하우스": [
-        ("One More Time", "Daft Punk", "https://www.youtube.com/watch?v=FGBhQbmPwH8"),
-        ("Turn Back Time", "Diplo & Sonny Fodera", "https://www.youtube.com/watch?v=R9gD7aVCBdg"),
-        ("Show Me Love", "Robin S", "https://www.youtube.com/watch?v=Ps2Jc28tQrw")
-    ],
-    "걸스힙합": [
-        ("Partition", "Beyoncé", "https://www.youtube.com/watch?v=pZ12_E5R3qc"),
-        ("Savage", "Megan Thee Stallion", "https://www.youtube.com/watch?v=JvQcabZ1zrk"),
-        ("Kill This Love", "BLACKPINK", "https://www.youtube.com/watch?v=2S24-y0Ij3Y")
-    ],
-    "K-Pop": [
-        ("Hype Boy", "NewJeans", "https://www.youtube.com/watch?v=11cta61wi0g"),
-        ("Sorry Sorry", "Super Junior", "https://www.youtube.com/watch?v=x6QA3m58DQw"),
-        ("LOVE DIVE", "IVE", "https://www.youtube.com/watch?v=Y8JFxS1HlDo")
-    ]
-}
+# --- 세션 상태 초기화 ---
+if "records" not in st.session_state:
+    st.session_state["records"] = []
+if "selected_songs" not in st.session_state:
+    st.session_state["selected_songs"] = []
 
-# 🎵 오늘 날짜 기반 추천곡 자동 선택
-today = datetime.date.today()
-random.seed(today.toordinal())  # 날짜별 고정 시드
-daily_recommendations = {genre: random.sample(songs, k=2) for genre, songs in recommendations.items()}
-
-
-# 💃 장르별 기본기 동작 (확장판)
+# --- 기본기 데이터 ---
 dance_basics = {
     "힙합": {
         "초급": [
-            ("Bounce", ["무릎을 리듬에 맞춰 굽혔다 펴며 상체와 함께 튕기기", "어깨를 위아래로 흔들며 그루브 살리기"]),
-            ("Step Touch", ["오른발을 옆으로 내딛고 왼발을 모으며 손을 옆으로 흔들기", "좌우 교대로 반복"]),
+            ("Bounce", ["무릎을 굽히며 리듬 타기", "어깨로 상체 리듬"]),
+            ("Step Touch", ["옆으로 발 내딛기", "반대 손 흔들기"]),
+            ("Clap", ["박자에 맞춰 손뼉 치기"]),
+            ("Slide", ["발을 옆으로 미끄러지듯 이동"])
         ],
         "중급": [
-            ("Body Roll", ["가슴→배→골반 순으로 굴리며 상체를 뒤로 젖혀 마무리"]),
-            ("Wave", ["손끝→팔꿈치→어깨→가슴→허리까지 물결처럼 연결"]),
+            ("Body Roll", ["가슴→배→골반 굴리기"]),
+            ("Wave", ["손끝→팔꿈치→어깨→가슴→허리"]),
+            ("Kick Step", ["앞으로 발차기 후 리듬"]),
+            ("Groove", ["상체로 전체적인 리듬 타기"])
         ],
         "고급": [
-            ("Knee Drop", ["한쪽 무릎을 바닥에 닿듯 착지 후 반대 다리로 연결"]),
-            ("Freeze Pose", ["박자에 맞춰 순간적으로 멈춰 포즈 유지"]),
+            ("Knee Drop", ["무릎 굽혀 착지"]),
+            ("Harlem Shake", ["어깨·상체를 빠르게 흔들기"]),
+            ("Air Walk", ["발이 떠 있는 듯 착시"]),
+            ("Freeze Pose", ["박자에 맞춰 순간 정지"])
         ]
     },
     "팝핀": {
         "초급": [
-            ("Hit", ["근육에 순간적으로 힘을 줘서 튕기기", "팔/가슴/다리 동시에 Pop"]),
-            ("Arm Wave", ["손끝→팔꿈치→어깨까지 파도처럼 연결"]),
+            ("Hit", ["팔·다리에 힘주며 박자"]),
+            ("Fresno", ["좌우 이동하며 팝"]),
+            ("Toyman", ["로봇 인형처럼 팔 꺾기"])
         ],
         "중급": [
-            ("Tut", ["팔꿈치와 손목을 직각으로 꺾어 도형 만들기", "마디마다 Pop으로 리듬감 살리기"]),
+            ("Old Man", ["상체 숙이며 팝"]),
+            ("Neck-o-flex", ["목을 기계적으로 꺾기"]),
+            ("Twist-o-flex", ["상체를 나누어 꺾으며 이동"])
         ],
         "고급": [
-            ("Animation Walk", ["걸음마다 Pop을 넣으며 애니메이션처럼 끊기"]),
+            ("Boogaloo Roll", ["몸 전체 웨이브"]),
+            ("Gliding", ["발을 미끄러지듯 이동"]),
+            ("Animation Walk", ["만화처럼 부드럽게 걷기"])
         ]
     },
     "하우스": {
         "초급": [
-            ("Shuffle Step", ["발을 빠르게 앞으로 미는 듯 이동", "무릎을 굽히며 바운스 유지"]),
+            ("Jack", ["상체 업다운"]),
+            ("Loose Leg", ["발을 튕기며 이동"]),
+            ("Pas de bourrée", ["기본 발 교차 스텝"])
         ],
         "중급": [
-            ("Jack", ["허리를 중심으로 상체와 골반을 앞뒤로 리듬감 있게"]),
+            ("Shuffle", ["발 비비며 빠르게 이동"]),
+            ("Cross Step", ["발 교차"]),
+            ("Skate", ["스케이트 타듯 미끄러지기"])
         ],
         "고급": [
-            ("Spin Kick", ["회전하며 발을 차올려 착지", "Groove로 연결"]),
+            ("Stomp", ["강한 박자 찍기"]),
+            ("Heel Toe", ["발끝·뒤꿈치 교차"]),
+            ("Floor Jack", ["바닥에 가까이 웨이브"])
         ]
     },
     "걸스힙합": {
         "초급": [
-            ("Hip Sway", ["골반을 좌우로 흔들며 리듬 타기", "손은 허리나 머리에 두기"]),
+            ("Hip Swing", ["골반 좌우 리듬"]),
+            ("Hair Flip", ["머리를 크게 돌리기"]),
+            ("Hand Wave", ["손으로 웨이브"])
         ],
         "중급": [
-            ("Chest Pump", ["가슴을 앞으로 강하게 내밀며 반복", "손과 어깨로 파워 강조"]),
+            ("Chest Pump", ["가슴 앞뒤"]),
+            ("Body Roll", ["전신 굴리기"]),
+            ("Hip Circle", ["골반을 크게 원 그리기"])
         ],
         "고급": [
-            ("Attitude Walk", ["천천히 걸으며 골반과 손동작 강조", "눈빛과 표정 활용"]),
+            ("Drop", ["빠르게 앉기"]),
+            ("Floor Move", ["바닥 동작"]),
+            ("Pose Change", ["연속된 포즈 전환"])
         ]
     },
     "K-Pop": {
         "초급": [
-            ("Finger Heart", ["손가락으로 하트 만들며 스텝과 함께 어필"]),
+            ("Finger Point", ["손가락 포인트"]),
+            ("Side Step", ["좌우 스텝"]),
+            ("Clap Wave", ["손뼉 치며 웨이브"])
         ],
         "중급": [
-            ("Formation Change", ["앞뒤/좌우로 이동하며 포메이션 바꾸기"]),
+            ("Shoulder Dance", ["어깨 리듬"]),
+            ("Hip Roll", ["골반 돌리기"]),
+            ("Spin & Point", ["회전 후 포즈"])
         ],
         "고급": [
-            ("Sync Dance", ["여러 사람이 동시에 완벽히 맞춰 동작 수행"]),
+            ("Floor Wave", ["바닥 웨이브"]),
+            ("Jump & Pose", ["점프 후 포즈"]),
+            ("Freeze Kick", ["발차기 후 정지"])
         ]
     }
 }
 
+# --- 추천곡 (장르별, 유튜브 링크) ---
+song_recommendations = {
+    "힙합": [
+        ("Jay Park - All I Wanna Do", "https://youtu.be/w0PtbE8K6FQ"),
+        ("Zico - Artist", "https://youtu.be/UuV2BmJ1p_I"),
+        ("Epik High - Fly", "https://youtu.be/lS9VnS6tJqE"),
+        ("Dynamic Duo - Ring My Bell", "https://youtu.be/vOhtFtzLGuQ"),
+        ("Dok2 - On My Way", "https://youtu.be/tvUAVSUZKjE"),
+        ("Crush - Oasis", "https://youtu.be/14iHRRa3F-c")
+    ],
+    "팝핀": [
+        ("Michael Jackson - Billie Jean", "https://youtu.be/Zi_XLOBDo_Y"),
+        ("Turbo - Love Is", "https://youtu.be/zB2C7tgpN6E"),
+        ("Chris Brown - Fine China", "https://youtu.be/iGsV9gTXgXo"),
+        ("Usher - Yeah!", "https://youtu.be/GxBSyx85Kp8")
+    ],
+    "하우스": [
+        ("Robin S - Show Me Love", "https://youtu.be/PSYxT9GM0fQ"),
+        ("Crystal Waters - Gypsy Woman", "https://youtu.be/MK6TXMsvgQg"),
+        ("Disclosure - Latch", "https://youtu.be/93ASUImTedo"),
+        ("Avicii - Levels", "https://youtu.be/_ovdm2yX4MA")
+    ],
+    "걸스힙합": [
+        ("Beyoncé - Run The World", "https://youtu.be/VBmMU_iwe6U"),
+        ("Ariana Grande - 7 rings", "https://youtu.be/QYh6mYIJG2Y"),
+        ("BLACKPINK - How You Like That", "https://youtu.be/ioNng23DkIM"),
+        ("Jessie J - Bang Bang", "https://youtu.be/0HDdjwpPM3Y")
+    ],
+    "K-Pop": [
+        ("BTS - Dynamite", "https://youtu.be/gdZLi9oWNZg"),
+        ("NewJeans - Super Shy", "https://youtu.be/ArmDp-zijuc"),
+        ("SEVENTEEN - HOT", "https://youtu.be/gRnuFC4Ualw"),
+        ("IVE - I AM", "https://youtu.be/6ZUIwj3FgUY"),
+        ("LE SSERAFIM - ANTIFRAGILE", "https://youtu.be/pyf8cbqyfPs"),
+        ("TWICE - Feel Special", "https://youtu.be/3ymwOvzhwHs")
+    ]
+}
 
-# 📊 연습 기록 저장용 DataFrame
-if "records" not in st.session_state:
-    st.session_state["records"] = pd.DataFrame(columns=["날짜", "장르", "동작", "연습 시간(시)", "연습 시간(분)", "추천곡"])
+# --- 랜덤 안무 생성기 ---
+st.header("🌸 랜덤 안무 생성기 🦋")
+genre = st.selectbox("장르를 선택하세요 🎵", list(dance_basics.keys()))
+level = st.radio("난이도를 선택하세요", list(dance_basics[genre].keys()))
 
+if st.button("✨ 안무 아이디어 생성하기"):
+    moves = dance_basics[genre][level]
+    routine_length = random.randint(5, 7)  # 더 많은 아이디어!
+    routine = random.sample(moves, k=min(routine_length, len(moves)))
+    
+    cute_emojis = ["🌸", "🐰", "🦋", "🌙", "⭐", "💎", "🍀", "🔥", "🪽", "🪐", "🌈", "💫"]
+    formatted = []
+    for i, (move, steps) in enumerate(routine, 1):
+        emoji = random.choice(cute_emojis)
+        step_text = "\n      - " + "\n      - ".join(steps)
+        formatted.append(f"{i}. {move} {emoji}{step_text}")
+    
+    st.session_state["current_routine"] = "\n".join(formatted)
 
-st.title("✨ 댄스 연습 기록 앱 ✨")
-st.markdown("🐰💃 연습을 기록하고 랜덤 안무 아이디어와 추천곡을 받아보세요!")
+if "current_routine" in st.session_state:
+    st.success(f"오늘의 안무 아이디어 ({genre} - {level}) 🌟")
+    st.markdown(st.session_state["current_routine"])
 
-# 🎶 장르 선택
-genre = st.selectbox("연습할 장르를 선택하세요 🎵", list(dance_basics.keys()))
+    # --- 오늘의 추천곡 (사용자가 직접 선택) ---
+    st.subheader("🎶 오늘의 추천 곡 선택")
+    options = [f"{title} 🔗 [유튜브]({link})" for title, link in song_recommendations[genre]]
+    selected = st.multiselect("원하는 곡을 선택하세요 🎵", options)
+    st.session_state["selected_songs"] = selected
 
-# 🏷️ 난이도 선택
-level = st.radio("난이도를 선택하세요 🌟", ["초급", "중급", "고급"])
+# --- 연습 기록 ---
+st.header("📝 연습 기록")
+date = st.date_input("연습 날짜", datetime.today())
+start_time = st.time_input("시작 시각", time(18, 0))
+end_time = st.time_input("종료 시각", time(19, 0))
 
-# 🎵 추천곡 제시 + 선택
-st.subheader("오늘의 추천곡 🎶")
-song_choices = daily_recommendations[genre]
-song_option = st.selectbox(
-    "마음에 드는 곡을 선택하세요:",
-    [f"{title} - {artist}" for title, artist, link in song_choices]
-)
-song_link = [link for title, artist, link in song_choices if f"{title} - {artist}" == song_option][0]
-st.markdown(f"👉 [YouTube에서 듣기 🎧]({song_link})")
+duration = (datetime.combine(datetime.today(), end_time) - 
+            datetime.combine(datetime.today(), start_time)).seconds / 3600
 
-# 💃 랜덤 안무 아이디어 생성
-if st.button("랜덤 안무 아이디어 생성 🎲"):
-    moves = random.sample(dance_basics[genre][level], k=min(2, len(dance_basics[genre][level])))
-    st.write("✨ 오늘의 안무 아이디어 ✨")
-    for move, details in moves:
-        st.markdown(f"**{move}**")
-        for step in details:
-            st.markdown(f"- {step}")
+if st.button("기록 저장"):
+    st.session_state["records"].append({
+        "date": date,
+        "hours": round(duration, 2),
+        "routine": st.session_state.get("current_routine", "없음"),
+        "genre": genre,
+        "level": level,
+        "songs": st.session_state.get("selected_songs", [])
+    })
+    st.success("✅ 연습 기록이 저장되었습니다!")
 
-# 🕒 연습 시간 기록
-st.subheader("연습 시간 기록 📊")
-hours = st.number_input("연습 시간 (시)", min_value=0, max_value=10, step=1)
-minutes = st.number_input("연습 시간 (분)", min_value=0, max_value=59, step=5)
-
-if st.button("연습 기록 저장 📝"):
-    new_record = {
-        "날짜": datetime.date.today(),
-        "장르": genre,
-        "동작": song_option,
-        "연습 시간(시)": hours,
-        "연습 시간(분)": minutes,
-        "추천곡": song_option
-    }
-    st.session_state["records"] = pd.concat([st.session_state["records"], pd.DataFrame([new_record])], ignore_index=True)
-    st.success("연습 기록이 저장되었습니다! 🎉")
-
-# 📊 기록 확인
-st.subheader("📖 나의 연습 기록")
-st.dataframe(st.session_state["records"])
+# --- 기록 보기 ---
+st.header("📊 연습 기록 보기")
+if st.session_state["records"]:
+    df = pd.DataFrame(st.session_state["records"])
+    st.dataframe(df)
+    st.line_chart(df.set_index("date")["hours"])
+else:
+    st.info("아직 기록이 없습니다 🐥")
